@@ -59,6 +59,7 @@ System_Boundary(go_future_system, "GoFuture Platform") {
     Container(app_worker, "Воркеры фоновых задач", "Celery", "Обработка асинхронных задач")
     
     ' ### МОНИТОРИНГ И OBSERVABILITY ###
+    Container(grafana_tempo, "Grafana Tempo", "Tracing System", "Система сбора трасировки")
     Container(grafana, "Grafana", "Dashboard System", "Визуализация метрик и дашборды")
     Container(loki, "Loki", "Log Aggregation", "Сбор и анализ логов")
     Container(alert_manager, "Alertmanager", "Alert System", "Управление алертами")
@@ -145,6 +146,7 @@ Rel_R(app_monolith, bank_api, "Инициирование выплат")
 Rel_D(app_monolith, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(app_monolith, loki, "Отправляет логи", "Loki Logs")
 Rel_D(app_monolith, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(app_monolith, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ЗАКАЗЫ ###
 Lay_U(booking_service, routing_service)
@@ -161,6 +163,7 @@ Rel_D(booking_service, db_booking, "Чтение/запись (ORM)")
 Rel_D(booking_service, db_cache, "Кэширование данных")
 Rel_D(booking_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(booking_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(booking_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ВОДИТЕЛЬ ###
 Lay_U(driver_service, routing_service)
@@ -180,6 +183,7 @@ Rel_U(driver_service, db_search,  "Геопоиск водителей")
 Rel_D(driver_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(driver_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(driver_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(driver_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ПРАЙСИНГ ###
 Lay_U(pricing_service, routing_service)
@@ -195,6 +199,7 @@ Rel_D(pricing_service, db_cache, "Кэширование данных")
 Rel_D(pricing_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(pricing_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(pricing_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(pricing_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 
 
@@ -215,8 +220,8 @@ Rel_D(payment_service, db_cache, "Кэширование данных")
 Rel_D(payment_service, bank_api, "Инициирование выплат")
 Rel_D(payment_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(payment_service, loki, "Отправляет логи", "Loki Logs")
-Rel_D(payment_service,analytics_engine, "Отправляет события", "AMQP")
-
+Rel_D(payment_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(payment_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА УВЕДОМЛЕНИЙ ###
@@ -236,6 +241,7 @@ Rel_D(notification_service, huawei_push, "Отправляет уведомле�
 Rel_D(notification_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(notification_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(notification_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(notification_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ГЕОРГРАФИИ ###
@@ -251,6 +257,7 @@ Rel_D(geography_service, db_cache, "Кэширование данных")
 Rel_D(geography_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(geography_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(geography_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(geography_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 
 
@@ -268,9 +275,12 @@ Rel_D(fraud_service, db_cache, "Кэширование данных")
 Rel_D(fraud_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
 Rel_D(fraud_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(fraud_service, analytics_engine, "Отправляет события", "AMQP")
+Rel_D(fraud_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
 
 
 ' ### СВЯЗИ DB ###
+Lay_L(db_cache, monitoring)
+
 Rel_D(db_main, monitoring, "Метрики БД", "PostgreSQL Exporter")
 Rel_D(db_booking, monitoring, "Метрики БД", "PostgreSQL Exporter")
 Rel_D(db_driver, monitoring, "Метрики БД", "PostgreSQL Exporter")
@@ -294,8 +304,7 @@ Rel_D(app_worker, loki, "Отправляет логи", "Loki Logs")
 ' ### РАСПЛОЖЕНИЕ ИНДЕКСА ###
 Lay_D(db_search, app_monolith)
 
-'### РАСПОЛОЖЕНИЕ БРОКЕРА ###
-Lay_L(db_cache, monitoring)
+'### БРОКЕРА ###
 
 ' ### МОНИТОРИНГ ###
 Lay_U(monitoring, db_driver)
@@ -306,23 +315,23 @@ Rel_D(alert_manager, sre_engineer, "Отправляет уведомления"
 
 
 ' ### CI/CD ###
-Rel(jenkins, ci_worker, "Запускает задачи", "SSH/API")
+Rel_D(jenkins, ci_worker, "Запускает задачи", "SSH/API")
 Rel_R(ci_worker, artifact_repo, "Пушит образы", "Docker Push")
-Rel(jenkins, artifact_repo, "Деплоит образы", "Docker Pull")
-Rel(ci_worker, app_monolith, "Запускает тесты", "Test Execution")
-Rel(ci_worker, booking_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, driver_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, payment_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, pricing_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, geography_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, notification_service, "Запускает тесты", "Test Execution")
-Rel(ci_worker, fraud_service, "Запускает тесты", "Test Execution")
+Rel_D(jenkins, artifact_repo, "Деплоит образы", "Docker Pull")
+Rel_D(ci_worker, app_monolith, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, booking_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, driver_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, payment_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, pricing_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, geography_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, notification_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, fraud_service, "Запускает тесты", "Test Execution")
 
 ' ### АНАЛИТИКА ###
-Rel(analytics_engine, analytics_db, "Записывает данные", "ETL Process")
-Rel(analytics_db,datalens, "Предоставляет данные", "SQL Queries")
-Rel(datalens, manager, "Бизнес-отчеты", "Dashboards")
-Rel(datalens, accountant, "Финансовые отчеты", "Dashboards")
+Rel_D(analytics_engine, analytics_db, "Записывает данные", "ETL Process")
+Rel_D(analytics_db,datalens, "Предоставляет данные", "SQL Queries")
+Rel_D(datalens, manager, "Бизнес-отчеты", "Dashboards")
+Rel_D(datalens, accountant, "Финансовые отчеты", "Dashboards")
 
 
 
