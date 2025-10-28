@@ -164,6 +164,7 @@ Rel_D(booking_service, db_cache, "Кэширование данных")
 Rel_D(booking_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(booking_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(booking_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(booking_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ВОДИТЕЛЬ ###
 Lay_U(driver_service, routing_service)
@@ -184,6 +185,7 @@ Rel_D(driver_service, monitoring, "Отправляет метрики", "Promet
 Rel_D(driver_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(driver_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(driver_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(driver_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ПРАЙСИНГ ###
 Lay_U(pricing_service, routing_service)
@@ -200,6 +202,7 @@ Rel_D(pricing_service, monitoring, "Отправляет метрики", "Prome
 Rel_D(pricing_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(pricing_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(pricing_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(pricing_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 
 
@@ -222,6 +225,7 @@ Rel_D(payment_service, monitoring, "Отправляет метрики", "Prome
 Rel_D(payment_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(payment_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(payment_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(payment_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА УВЕДОМЛЕНИЙ ###
@@ -242,6 +246,7 @@ Rel_D(notification_service, monitoring, "Отправляет метрики", "
 Rel_D(notification_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(notification_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(notification_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(notification_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 
 ' ### РАСПЛОЖЕНИЕ СЕРВИСА ГЕОРГРАФИИ ###
@@ -258,6 +263,7 @@ Rel_D(geography_service, monitoring, "Отправляет метрики", "Pro
 Rel_D(geography_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(geography_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(geography_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(geography_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 
 
@@ -276,6 +282,7 @@ Rel_D(fraud_service, monitoring, "Отправляет метрики", "Prometh
 Rel_D(fraud_service, loki, "Отправляет логи", "Loki Logs")
 Rel_D(fraud_service, analytics_engine, "Отправляет события", "AMQP")
 Rel_D(fraud_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(fraud_service, app_monolith, "Отправляет данные в монолит для консистентности", "GoFuture Monolith")
 
 
 ' ### СВЯЗИ DB ###
