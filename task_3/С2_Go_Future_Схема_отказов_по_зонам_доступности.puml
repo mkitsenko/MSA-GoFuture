@@ -1,0 +1,39 @@
+@startuml Context_Diagram_With_Payouts
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+SHOW_PERSON_PORTRAIT()
+
+Person(passenger, "Пассажир", "Заказывает, отслеживает и оплачивает поездки")
+Person(driver, "Водитель", "Принимает заказы, управляет поездками\nи получает выплаты") 
+Container(routing_service, "DNS+GeoIP2+WAF+ServiceMesh", "Nginx", "Геомаршрутизация, файрвол, маршрутизация")
+
+System_Boundary(region_r1, "Регион R1"){
+    System_Boundary(r1_az_a, "Зона доступности А")    {
+        Container(service_r1_az_a, "GoFuture Служба", "Элемент системы", "Микросервис\Служба")
+        ContainerDb(service_db_r1_az_a, "БД Службы (Ведущая)", "PostgreSQL", "БД Микросервиса\Службы")
+        
+        Rel(routing_service, service_r1_az_a, "ОТКАЗ В ЗАПРОСЕ")
+        Rel(service_r1_az_a, service_db_r1_az_a, "ОТКАЗ В ЧТЕНИИ\ЗАПИСИ")
+        
+    }
+    
+    System_Boundary(r1_az_b, "Зона доступности Б")    {
+        Container(service_r1_az_b, "GoFuture Служба", "Элемент системы", "Микросервис\Служба")
+        ContainerDb(service_db_r1_az_b, "БД Службы (Ведомая)", "PostgreSQL", "БД Микросервиса\Службы")
+        
+        Rel(routing_service, service_r1_az_b, "МАРШРУТИЗАЦИЯ В ЗОНУ ДОСТУПНОСТИ Б")
+        Rel(service_r1_az_b, service_db_r1_az_a, "Читает\Записывает данные (Когда БД зоны А ведущая)")
+        Rel(service_r1_az_b, service_db_r1_az_b, "Читает\Записывает данные (Когда БД зоны Б ведущая)")
+   }
+   Rel(service_r1_az_a, service_db_r1_az_b, "МАРШРУТИЗАЦИЯ В ДОСТУПНОСТИ Б")
+}
+
+Lay_R(r1_az_a, r1_az_b)
+
+Rel_U(service_db_r1_az_a, service_db_r1_az_b, "Синхронная репликация (Когда БД зоны A ведущая)")
+Rel_D(service_db_r1_az_b, service_db_r1_az_a, "Синхронная репликация (Когда БД зоны Б ведущая)")
+
+Rel(passenger, routing_service, "Направляет запрос")
+Rel(driver, routing_service, "Направляет запрос")
+
+@enduml

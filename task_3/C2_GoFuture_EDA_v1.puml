@@ -13,12 +13,13 @@ Person(dev_engineer, "Разработчик", "Разрабатывает но�
 Person(sre_engineer, "SRE инженер", "Мониторит и поддерживает систему")
 
 System_Boundary(go_future_system, "GoFuture Platform") {
-    System_Boundary(kubernetes, "Kubernetes (K8s)"){
+  
+   Container(web_passenger, "Пассажирское приложение", "iOS/Android/Huawei", "Интерфейс для пассажиров")
+   Container(web_driver, "Водительское приложение", "iOS/Android/Huawei", "Интерфейс для водителей")
+   System_Boundary(kubernetes, "Kubernetes (K8s)"){
     ' ### МАРШРУТИЗАЦИЯ ###
-        Container(routing_service, "GoFuture Маршрутизатор", "Nginx", "Сервис маршрутизации запросов к системе")
     ' ### КЛИЕНТСКИЕ ПРИЛОЖЕНИЯ ###
-       Container(web_passenger, "Пассажирское приложение", "iOS/Android/Huawei", "Интерфейс для пассажиров")
-       Container(web_driver, "Водительское приложение", "iOS/Android/Huawei", "Интерфейс для водителей")
+       Container(routing_service, "DNS+GeoIP2+WAF+ServiceMesh", "Nginx", "Геомаршрутизация, файрвол, маршрутизация")
        Container(web_portal, "Корпоративный веб-портал", "Web Application", "Управление заказами")
        Container(admin_portal, "Админ-панель", "Web Application", "Управление выплатами")
        
@@ -87,6 +88,9 @@ System_Ext(bank_api, "API Банка", "Банковские выплаты")
 Lay_D(passenger, web_passenger)
 Lay_D(driver, web_driver)
 
+Lay_D(web_passenger, dns)
+Lay_D(web_driver, dns)
+
 Rel_D(passenger, web_passenger, "Использует")
 Rel_D(driver, web_driver, "Использует")
 Rel_D(manager, web_portal, "Использует")
@@ -94,6 +98,8 @@ Rel_D(accountant, admin_portal, "Использует")
 Rel_D(dev_engineer, jenkins, "Запускает сборки")
 Rel_D(sre_engineer, grafana, "Мониторит систему")
 Rel_D(sre_engineer, alert_manager, "Настраивает алерты")
+
+Lay_D(routing_service, kubernetes)
 
 ' ### СВЯЗИ ПРИЛОЖЕНИЙ С СЕРВИСАМИ ###
 Rel_D(web_passenger, routing_service, "HTTP/REST API")

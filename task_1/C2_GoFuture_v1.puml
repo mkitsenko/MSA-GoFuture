@@ -15,7 +15,7 @@ Person(sre_engineer, "SRE инженер", "Мониторит и поддерж
 System_Boundary(go_future_system, "GoFuture Platform") {
     System_Boundary(kubernetes, "Kubernetes (K8s)"){
     ' ### МАРШРУТИЗАЦИЯ ###
-        Container(routing_service, "GoFuture Маршрутизатор", "Apache Istio", "Сервис маршрутизации запросов к системе")
+        Container(routing_service, "GoFuture Маршрутизатор", "Nginx", "Сервис маршрутизации запросов к системе")
     ' ### КЛИЕНТСКИЕ ПРИЛОЖЕНИЯ ###
        Container(web_passenger, "Пассажирское приложение", "iOS/Android/Huawei", "Интерфейс для пассажиров")
        Container(web_driver, "Водительское приложение", "iOS/Android/Huawei", "Интерфейс для водителей")
