@@ -1,0 +1,146 @@
+@startuml Container_Diagram_Full_Infrastructure
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+top to bottom direction
+
+SHOW_PERSON_PORTRAIT()
+
+Person(manager, "Корпоративный менеджер", "Управляет счетами")
+Person(accountant, "Бухгалтер", "Контролирует выплаты")
+
+System_Boundary(go_future_system, "GoFuture Platform") {
+   System_Boundary(kubernetes, "Kubernetes (K8s)"){
+
+       ' ### Доменные сервисы ###
+       Container(booking_service, "GoFuture Заказы", "Python Flask", "Сервис Заказов для клиентов")
+       Container(driver_service, "GoFuture Водитель", "Python Flask", "Сервис работы с Водителями")
+       Container(pricing_service, "GoFuture Прайсинг","Python Flask", "Сервис обработки ценообразования")
+       Container(payment_service, "GoFuture Оплата","Python Flask", "Сервис обработки платежей")
+       Container(notification_service, "GoFuture Нотификации","Python Flask", "Сервис рассылки и управления нотификациями")
+       Container(geography_service, "GoFuture География","Python Flask", "Сервис работы с картографическими системами")
+       Container(fraud_service, "GoFuture Анти-фрод","Python Flask", "Сервис работы с выявлением мошенничества")
+       
+       ' ### ОСНОВНОЙ МОНОЛИТ ###
+       Container(app_monolith, "GoFuture Monolith", "Django Application", "Содержит всю бизнес-логику")
+       
+        ' ### БАЗЫ ДАННЫХ ###
+        ContainerDb(db_booking, "Заказы БД", "PostgreSQL", "Работает с доменом Заказы")
+        ContainerDb(db_driver, "Водитель БД", "PostgreSQL", "Работает с доменом Водитель")
+        ContainerDb(db_pricing, "Прайсинг БД","PostgreSQL", "Работает с доменом Прайсинг")
+        ContainerDb(db_payments, "Оплата БД","PostgreSQL", "Работает с доменом Оплата")
+        ContainerDb(db_notifications, "Нотификации БД","PostgreSQL", "Работает с доменом Нотификации")
+        ContainerDb(db_geography, "География БД","PostgreSQL", "Работает с доменом География")
+        ContainerDb(db_fraud, "Анти-фрод БД","PostgreSQL", "Работает с доменом Анти-фрод")
+        
+        ' ### МОНИТОРИНГ И OBSERVABILITY ###
+        Container(monitoring, "Prometheus", "Monitoring System", "Сбор метрик и мониторинг")
+    }
+
+    ' ### БАЗЫ ДАННЫХ ###
+    ContainerDb(db_main, "Основная БД", "PostgreSQL RDS", "Хранит все бизнес-данные")
+    
+    ' ### ОЧЕРЕДИ И ВОРКЕРЫ ###
+    ContainerQueue(kafka, "Брокер сообщений", "Apache Kafka", "Обмен событиями и данными")
+    
+    ' ### МОНИТОРИНГ И OBSERVABILITY ###
+    
+    Container(airflow, "Оркестратор ЕTL", "Airflow",  "Запускает задачи ETL\Извлекает данные")
+    Container(s3, "Хранилище 'сырых' данных", "S3",  "Хранит сырые данные")
+    ContainerDb(staging, "Стейджинг", "PostgeSQL/Greenplum",  "Очищает, нормализует данные, собирает модель")
+    ' ### АНАЛИТИЧЕСКАЯ ИНФРАСТРУКТУРА ###
+    ContainerDb(analytics_db, "Analytics DB", "ClickHouse", "Хранение аналитических данных\Витрины данных")
+    Container(datalens, "DataLens", "BI Tool", "Визуализация бизнес-метрик")
+    
+    
+}
+
+Rel_D(airflow, db_main, "Извлекает инкремент данных")
+Rel_D(airflow, db_main, "Извлекает инкремент данных")
+Rel_D(airflow, db_booking, "Извлекает инкремент данных")
+Rel_D(airflow, db_driver, "Извлекает инкремент данных")
+Rel_D(airflow, db_pricing, "Извлекает инкремент данных")
+Rel_D(airflow, db_payments, "Извлекает инкремент данных")
+Rel_D(airflow, db_notifications, "Извлекает инкремент данных")
+Rel_D(airflow, db_geography, "Извлекает инкремент данных")
+Rel_D(airflow, db_fraud, "Извлекает инкремент данных")
+
+Rel_D(airflow, s3, "Складывает 'сырые' данные в S3")
+Rel_D(airflow, staging, "Запускает задачи расчета")
+Rel_D(airflow, analytics_db, "Запускает задачи построения витрин данных")
+
+' ### СВЯЗИ ПОЛЬЗОВАТЕЛЕЙ ###
+
+' ### СВЯЗИ МОНОЛИТА ###
+Rel_D(app_monolith, db_main, "Чтение/запись (ORM)")
+Rel_D(app_monolith, kafka, "Отправляет события", "Kafka")
+
+
+Rel_D(booking_service, db_booking, "Чтение/запись (ORM)")
+Rel_D(booking_service, kafka, "Отправляет события", "AMQP")
+
+
+' ### СВЯЗИ СЕРВИСА ВОДИТЕЛЬ ###
+Rel_D(driver_service, db_driver, "Чтение/запись (ORM)")
+Rel_D(driver_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(driver_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ СЕРВИСА ПРАЙСИНГ ###
+Rel_D(pricing_service, db_pricing, "Чтение/запись (ORM)")
+Rel_D(pricing_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(pricing_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ СЕРВИСА ПЛАТЕЖИ ###
+Rel_D(payment_service, db_payments, "Чтение/запись (ORM)")
+Rel_D(payment_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(payment_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ СЕРВИСА УВЕДОМЛЕНИЙ ###
+Rel_D(notification_service, db_notifications, "Чтение/запись (ORM)")
+Rel_D(notification_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(notification_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ СЕРВИСА ГЕОРГРАФИИ ###
+Rel_D(geography_service, db_geography, "Чтение/запись (ORM)")
+Rel_D(geography_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(geography_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ СЕРВИСА АНТИФРОД ###
+Rel_D(fraud_service, db_fraud, "Чтение/запись (ORM)")
+Rel_D(fraud_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(fraud_service, kafka, "Отправляет события", "Apache Kafka")
+
+' ### СВЯЗИ DB ###
+Lay_D(db_main, app_monolith)
+
+Rel_D(db_main, kafka, "Отправляет события изменения данных", "Debezium (CDC)")
+Rel_D(db_booking, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_driver, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_pricing, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_payments, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_notifications, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_geography, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_fraud, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+
+Rel_D(db_main, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_booking, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_driver, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_pricing, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_payments, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_notifications, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_geography, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_fraud, monitoring, "Метрики БД", "PostgreSQL Exporter")
+
+' ### МОНИТОРИНГ ###
+Rel_D(kafka, monitoring, "Метрики очередей", "Metric Exporter")
+Rel_D(kafka, s3, "Данные из топиков", "S3Sync")
+
+' ### АНАЛИТИКА ###
+Rel_D(analytics_db,datalens, "Предоставляет данные", "SQL Queries")
+Rel_D(datalens, manager, "Бизнес-отчеты", "Dashboards")
+Rel_D(datalens, accountant, "Финансовые отчеты", "Dashboards")
+
+Rel(s3, staging, "Обрабатывает данные через ETL", "Airflow")
+Rel(staging, analytics_db, "Собирает витрины ETL", "Airflow")
+
+
+@enduml
