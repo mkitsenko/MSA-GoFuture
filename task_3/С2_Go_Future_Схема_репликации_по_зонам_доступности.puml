@@ -1,0 +1,128 @@
+@startuml Context_Diagram_With_Payouts
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+SHOW_PERSON_PORTRAIT()
+
+Person(passenger, "Пассажир", "Заказывает, отслеживает и оплачивает поездки")
+Person(driver, "Водитель", "Принимает заказы, управляет поездками\nи получает выплаты") 
+
+System_Boundary(region_r1, "Регион R1"){
+    System_Boundary(r1_az_a, "Зона доступности А")    {
+        Container(routing_service_r1_az_a, "DNS+GeoIP2+WAF+ServiceMesh", "Nginx", "Геомаршрутизация, файрвол, маршрутизация")
+    
+        Container(booking_service_r1_az_a, "GoFuture Заказы", "Python Flask", "Сервис Заказов для клиентов")
+        Container(driver_service_r1_az_a, "GoFuture Водитель", "Python Flask", "Сервис работы с Водителями")
+        Container(pricing_service_r1_az_a, "GoFuture Прайсинг","Python Flask", "Сервис обработки ценообразования")
+        Container(payment_service_r1_az_a, "GoFuture Оплата","Python Flask", "Сервис обработки платежей")
+        Container(notification_service_r1_az_a, "GoFuture Нотификации","Python Flask", "Сервис рассылки и управления нотификациями")
+        Container(geography_service_r1_az_a, "GoFuture География","Python Flask", "Сервис работы с картографическими системами")
+        Container(fraud_service_r1_az_a, "GoFuture Анти-фрод","Python Flask", "Сервис работы с выявлением мошенничества")
+        
+        ContainerDb(db_booking_r1_az_a, "Заказы БД", "PostgreSQL", "Работает с доменом Заказы")
+        ContainerDb(db_driver_r1_az_a, "Водитель БД", "PostgreSQL", "Работает с доменом Водитель")
+        ContainerDb(db_pricing_r1_az_a, "Прайсинг БД","PostgreSQL", "Работает с доменом Прайсинг")
+        ContainerDb(db_payments_r1_az_a, "Оплата БД","PostgreSQL", "Работает с доменом Оплата")
+        ContainerDb(db_notifications_r1_az_a, "Нотификации БД","PostgreSQL", "Работает с доменом Нотификации")
+        ContainerDb(db_geography_r1_az_a, "География БД","PostgreSQL", "Работает с доменом География")
+        ContainerDb(db_fraud_r1_az_a, "Анти-фрод БД","PostgreSQL", "Работает с доменом Анти-фрод")
+        
+        Rel(passenger, routing_service_r1_az_a, "Направляет запрос")
+        Rel(driver, routing_service_r1_az_a, "Направляет запрос")
+        
+        Rel(routing_service_r1_az_a, booking_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, driver_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, pricing_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, payment_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, geography_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, notification_service_r1_az_a, "Маршрутизирует")
+        Rel(routing_service_r1_az_a, fraud_service_r1_az_a, "Маршрутизирует")
+        
+        Rel(booking_service_r1_az_a, db_booking_r1_az_a, "Читает\Записывает данные")
+        Rel(driver_service_r1_az_a, db_driver_r1_az_a, "Читает\Записывает данные")
+        Rel(pricing_service_r1_az_a, db_pricing_r1_az_a, "Читает\Записывает данные")
+        Rel(payment_service_r1_az_a, db_payments_r1_az_a, "Читает\Записывает данные")
+        Rel(geography_service_r1_az_a, db_geography_r1_az_a, "Читает\Записывает данные")
+        Rel(notification_service_r1_az_a, db_notifications_r1_az_a, "Читает\Записывает данные")
+        Rel(fraud_service_r1_az_a, db_fraud_r1_az_a, "Читает\Записывает данные")
+        
+
+    }
+    
+   System_Boundary(r1_az_b, "Зона доступности Б")    {
+           Container(routing_service_r1_az_b, "DNS+GeoIP2+WAF+ServiceMesh", "Nginx", "Геомаршрутизация, файрвол, маршрутизация")
+       
+           Container(booking_service_r1_az_b, "GoFuture Заказы", "Python Flask", "Сервис Заказов для клиентов")
+           Container(driver_service_r1_az_b, "GoFuture Водитель", "Python Flask", "Сервис работы с Водителями")
+           Container(pricing_service_r1_az_b, "GoFuture Прайсинг","Python Flask", "Сервис обработки ценообразования")
+           Container(payment_service_r1_az_b, "GoFuture Оплата","Python Flask", "Сервис обработки платежей")
+           Container(notification_service_r1_az_b, "GoFuture Нотификации","Python Flask", "Сервис рассылки и управления нотификациями")
+           Container(geography_service_r1_az_b, "GoFuture География","Python Flask", "Сервис работы с картографическими системами")
+           Container(fraud_service_r1_az_b, "GoFuture Анти-фрод","Python Flask", "Сервис работы с выявлением мошенничества")
+           
+           ContainerDb(db_booking_r1_az_b, "Заказы БД", "PostgreSQL", "Работает с доменом Заказы")
+           ContainerDb(db_driver_r1_az_b, "Водитель БД", "PostgreSQL", "Работает с доменом Водитель")
+           ContainerDb(db_pricing_r1_az_b, "Прайсинг БД","PostgreSQL", "Работает с доменом Прайсинг")
+           ContainerDb(db_payments_r1_az_b, "Оплата БД","PostgreSQL", "Работает с доменом Оплата")
+           ContainerDb(db_notifications_r1_az_b, "Нотификации БД","PostgreSQL", "Работает с доменом Нотификации")
+           ContainerDb(db_geography_r1_az_b, "География БД","PostgreSQL", "Работает с доменом География")
+           ContainerDb(db_fraud_r1_az_b, "Анти-фрод БД","PostgreSQL", "Работает с доменом Анти-фрод")
+           
+           Rel(passenger, routing_service_r1_az_b, "Направляет запрос")
+           Rel(driver, routing_service_r1_az_b, "Направляет запрос")
+           
+           Rel(routing_service_r1_az_b, booking_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, driver_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, pricing_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, payment_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, geography_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, notification_service_r1_az_b, "Маршрутизирует")
+           Rel(routing_service_r1_az_b, fraud_service_r1_az_b, "Маршрутизирует")
+           
+           Rel(booking_service_r1_az_b, db_booking_r1_az_b, "Читает\Записывает данные")
+           Rel(driver_service_r1_az_b, db_driver_r1_az_b, "Читает\Записывает данные")
+           Rel(pricing_service_r1_az_b, db_pricing_r1_az_b, "Читает\Записывает данные")
+           Rel(payment_service_r1_az_b, db_payments_r1_az_b, "Читает\Записывает данные")
+           Rel(geography_service_r1_az_b, db_geography_r1_az_b, "Читает\Записывает данные")
+           Rel(notification_service_r1_az_b, db_notifications_r1_az_b, "Читает\Записывает данные")
+           Rel(fraud_service_r1_az_b, db_fraud_r1_az_b, "Читает\Записывает данные")
+   }
+   
+   Rel(routing_service_r1_az_a, routing_service_r1_az_b, "Маршрутизация доступности")
+   
+   Lay_D(r1_az_a, r1_az_b)
+   
+   Rel(db_booking_r1_az_a, db_booking_r1_az_b, "Синхронная репликация данных")
+   Rel(db_driver_r1_az_a, db_driver_r1_az_b, "Синхронная репликация данных")
+   Rel(db_pricing_r1_az_a, db_pricing_r1_az_b, "Синхронная репликация данных")
+   Rel(db_payments_r1_az_a, db_payments_r1_az_b, "Синхронная репликация данных")
+   Rel(db_geography_r1_az_a, db_geography_r1_az_b, "Синхронная репликация данных")
+   Rel(db_notifications_r1_az_a, db_notifications_r1_az_b, "Синхронная репликация данных")
+   Rel(db_fraud_r1_az_a, db_fraud_r1_az_b, "Синхронная репликация данных")
+    
+   System_Ext(yandex_pay_r1, "Яндекс.Пэй", "Обрабатывает платежные транзакции")
+   System_Ext(yandex_maps_r1, "Яндекс.Карты", "Предоставляет геоданные и маршруты")
+   System_Ext(fcm_r1, "Firebase Cloud Messaging", "Отправляет уведомления для iOS/Android")
+   System_Ext(apns_r1, "Apple Push Notification Service", "Отправляет уведомления для iOS")
+   System_Ext(huawei_push_r1, "Huawei Push Kit", "Отправляет уведомления для Huawei devices")
+   System_Ext(bank_api_r1, "API Банка", "Обрабатывает банковские выплаты")
+}
+
+
+
+
+Rel(payment_service_r1_az_a, yandex_pay_r1, "Обрабатывает платежи через")
+Rel(geography_service_r1_az_a, yandex_maps_r1, "Запрашивает геоданные через")
+Rel(notification_service_r1_az_a, fcm_r1, "Отправляет уведомления через")
+Rel(notification_service_r1_az_a, apns_r1, "Отправляет уведомления через")
+Rel(notification_service_r1_az_a, huawei_push_r1, "Отправляет уведомления через")
+Rel(payment_service_r1_az_a, bank_api_r1, "Инициирует выплаты через")
+
+Rel(payment_service_r1_az_b, yandex_pay_r1, "Обрабатывает платежи через")
+Rel(geography_service_r1_az_b, yandex_maps_r1, "Запрашивает геоданные через")
+Rel(notification_service_r1_az_b, fcm_r1, "Отправляет уведомления через")
+Rel(notification_service_r1_az_b, apns_r1, "Отправляет уведомления через")
+Rel(notification_service_r1_az_b, huawei_push_r1, "Отправляет уведомления через")
+Rel(payment_service_r1_az_b, bank_api_r1, "Инициирует выплаты через")
+
+
+@enduml

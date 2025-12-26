@@ -1,0 +1,347 @@
+@startuml Container_Diagram_Full_Infrastructure
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+top to bottom direction
+
+SHOW_PERSON_PORTRAIT()
+
+Person(passenger, "Пассажир", "Заказывает поездки")
+Person(driver, "Водитель", "Принимает заказы и получает выплаты")
+Person(manager, "Корпоративный менеджер", "Управляет счетами")
+Person(accountant, "Бухгалтер", "Контролирует выплаты")
+Person(dev_engineer, "Разработчик", "Разрабатывает новые функции")
+Person(sre_engineer, "SRE инженер", "Мониторит и поддерживает систему")
+
+System_Boundary(go_future_system, "GoFuture Platform") {
+  
+   Container(keycloak, "Аутентификация", "Keycloak", "Сервис управления доступом и аутентификации")
+   Container(web_passenger, "Пассажирское приложение", "iOS/Android/Huawei", "Интерфейс для пассажиров")
+   Container(web_driver, "Водительское приложение", "iOS/Android/Huawei", "Интерфейс для водителей")
+   System_Boundary(kubernetes, "Kubernetes (K8s)"){
+    ' ### МАРШРУТИЗАЦИЯ ###
+    ' ### КЛИЕНТСКИЕ ПРИЛОЖЕНИЯ ###
+       Container(routing_service, "DNS+GeoIP2+WAF+ServiceMesh", "Nginx", "Геомаршрутизация, файрвол, маршрутизация")
+       Container(web_portal, "Корпоративный веб-портал", "Web Application", "Управление заказами")
+       Container(admin_portal, "Админ-панель", "Web Application", "Управление выплатами")
+       
+       ' ### Доменные сервисы ###
+       Container(booking_service, "GoFuture Заказы", "Python Flask", "Сервис Заказов для клиентов")
+       Container(driver_service, "GoFuture Водитель", "Python Flask", "Сервис работы с Водителями")
+       Container(pricing_service, "GoFuture Прайсинг","Python Flask", "Сервис обработки ценообразования")
+       Container(payment_service, "GoFuture Оплата","Python Flask", "Сервис обработки платежей")
+       Container(notification_service, "GoFuture Нотификации","Python Flask", "Сервис рассылки и управления нотификациями")
+       Container(geography_service, "GoFuture География","Python Flask", "Сервис работы с картографическими системами")
+       Container(fraud_service, "GoFuture Анти-фрод","Python Flask", "Сервис работы с выявлением мошенничества")
+       
+       ' ### ОСНОВНОЙ МОНОЛИТ ###
+       Container(app_monolith, "GoFuture Monolith", "Django Application", "Содержит всю бизнес-логику")
+       
+        ' ### БАЗЫ ДАННЫХ ###
+        ContainerDb(db_booking, "Заказы БД", "PostgreSQL", "Работает с доменом Заказы")
+        ContainerDb(db_driver, "Водитель БД", "PostgreSQL", "Работает с доменом Водитель")
+        ContainerDb(db_pricing, "Прайсинг БД","PostgreSQL", "Работает с доменом Прайсинг")
+        ContainerDb(db_payments, "Оплата БД","PostgreSQL", "Работает с доменом Оплата")
+        ContainerDb(db_notifications, "Нотификации БД","PostgreSQL", "Работает с доменом Нотификации")
+        ContainerDb(db_geography, "География БД","PostgreSQL", "Работает с доменом География")
+        ContainerDb(db_fraud, "Анти-фрод БД","PostgreSQL", "Работает с доменом Анти-фрод")
+        
+        ' ### МОНИТОРИНГ И OBSERVABILITY ###
+        Container(monitoring, "Prometheus", "Monitoring System", "Сбор метрик и мониторинг")
+    }
+
+    ' ### БАЗЫ ДАННЫХ ###
+    ContainerDb(db_main, "Основная БД", "PostgreSQL RDS", "Хранит все бизнес-данные")
+    ContainerDb(db_cache, "In-memory кэш", "Redis", "Кэширование данных")
+    ContainerDb(db_search, "Поисковый индекс", "Elasticsearch", "Геопоиск водителей")
+    
+  
+    
+    ' ### ОЧЕРЕДИ И ВОРКЕРЫ ###
+    ContainerQueue(kafka, "Брокер сообщений", "Apache Kafka", "Обмен событиями и данными")
+    Container(app_worker, "Воркеры фоновых задач", "Celery", "Обработка асинхронных задач")
+    
+    ' ### МОНИТОРИНГ И OBSERVABILITY ###
+    Container(grafana_tempo, "Grafana Tempo", "Tracing System", "Система сбора трасировки")
+    Container(grafana, "Grafana", "Dashboard System", "Визуализация метрик и дашборды")
+    Container(loki, "Loki", "Log Aggregation", "Сбор и анализ логов")
+    Container(alert_manager, "Alertmanager", "Alert System", "Управление алертами")
+    
+    ' ### CI/CD ИНФРАСТРУКТУРА ###
+    Container(jenkins, "Jenkins", "CI/CD Server", "Сборка и деплой монолита")
+    Container(artifact_repo, "Artifact Repository", "Docker Registry", "Хранение образов приложения")
+    Container(ci_worker, "CI/CD Workers", "VM/Containers", "Выполнение задач сборки и тестов")
+    
+    ' ### АНАЛИТИЧЕСКАЯ ИНФРАСТРУКТУРА ###
+    Container(analytics_engine, "Analytics Engine", "Spark/Flink", "Обработка аналитических данных")
+    ContainerDb(analytics_db, "Analytics DB", "ClickHouse", "Хранение аналитических данных")
+    Container(datalens, "DataLens", "BI Tool", "Визуализация бизнес-метрик")
+}
+
+' ### ВНЕШНИЕ СИСТЕМЫ ###
+System_Ext(yandex_pay, "Яндекс.Пэй", "Платежный шлюз")
+System_Ext(yandex_maps, "Яндекс.Карты", "Картографический сервис")
+System_Ext(fcm, "FCM", "Push-сервис Google")
+System_Ext(apns, "APNs", "Push-сервис Apple")
+System_Ext(huawei_push, "Huawei Push Kit", "Push-сервис Huawei")
+System_Ext(bank_api, "API Банка", "Банковские выплаты")
+
+' ### СВЯЗИ ПОЛЬЗОВАТЕЛЕЙ ###
+Lay_D(passenger, web_passenger)
+Lay_D(driver, web_driver)
+
+Lay_D(web_passenger, dns)
+Lay_D(web_driver, dns)
+
+Rel_D(passenger, web_passenger, "Использует")
+Rel_D(driver, web_driver, "Использует")
+Rel_D(manager, web_portal, "Использует")
+Rel_D(accountant, admin_portal, "Использует")
+Rel_D(dev_engineer, jenkins, "Запускает сборки")
+Rel_D(sre_engineer, grafana, "Мониторит систему")
+Rel_D(sre_engineer, alert_manager, "Настраивает алерты")
+
+Lay_D(routing_service, kubernetes)
+
+' ### СВЯЗИ ПРИЛОЖЕНИЙ С СЕРВИСАМИ ###
+Rel_D(web_passenger, routing_service, "HTTP/REST API")
+Rel_D(web_driver, routing_service, "HTTP/REST API")
+Rel_D(web_portal, routing_service, "HTTP/REST API")
+Rel_D(admin_portal, routing_service, "HTTP/REST API")
+
+Rel_D(web_passenger, keycloak, "Аутентификация")
+Rel_D(web_driver, keycloak, "Аутентификация")
+Rel_D(web_portal, keycloak, "Аутентификация")
+Rel_D(admin_portal, keycloak, "Аутентификация")
+
+' ### РАСПОЛОЖЕНИЕ МАРШРУТИЗАТОРА ###
+Lay_U(routing_service,web_passenger)
+Lay_U(routing_service,web_driver)
+Lay_U(routing_service,web_portal)
+Lay_U(routing_service,admin_portal)
+
+Lay_D(routing_service, app_monolith)
+Lay_D(routing_service, booking_service)
+Lay_D(routing_service, driver_service)
+Lay_D(routing_service, pricing_service)
+Lay_D(routing_service, payment_service)
+Lay_D(routing_service, notification_service)
+Lay_D(routing_service, geography_service)
+Lay_D(routing_service, fraud_service)
+
+' ### СВЯЗИ МАРШРУТИЗАТОРА ###
+
+Rel_D(routing_service, app_monolith, "HTTP/REST API")
+Rel_D(routing_service, booking_service, "HTTP/REST API")
+Rel_D(routing_service, driver_service, "HTTP/REST API")
+Rel_D(routing_service, pricing_service, "HTTP/REST API")
+Rel_D(routing_service, payment_service, "HTTP/REST API")
+Rel_D(routing_service, notification_service, "HTTP/REST API")
+Rel_D(routing_service, geography_service, "HTTP/REST API")
+Rel_D(routing_service, fraud_service, "HTTP/REST API")
+
+' ### РАСПЛОЖЕНИЕ МОНОЛИТА ###
+Lay_U(app_monolith, routing_service)
+Lay_L(app_monolith, routing_service)
+Lay_D(app_monolith, db_main)
+Lay_R(app_monolith, booking_service)
+
+' ### СВЯЗИ МОНОЛИТА ###
+Rel_D(app_monolith, db_main, "Чтение/запись (ORM)")
+Rel_D(app_monolith, db_cache, "Кэширование данных")
+Rel_U(app_monolith, db_search, "Геопоиск водителей")
+Rel_R(app_monolith, yandex_pay, "Обработка платежей")
+Rel_R(app_monolith, yandex_maps, "Запросы геоданных")
+Rel_R(app_monolith, bank_api, "Инициирование выплат")
+Rel_D(app_monolith, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(app_monolith, loki, "Отправляет логи", "Loki Logs")
+Rel_D(app_monolith, kafka, "Отправляет события", "Kafka")
+Rel_D(app_monolith, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА ЗАКАЗЫ ###
+Lay_U(booking_service, routing_service)
+Lay_L(booking_service, app_monolith)
+Lay_D(booking_service, db_booking)
+Lay_D(booking_service, db_cache)
+Lay_D(booking_service, monitoring)
+Lay_R(booking_service, driver_service)
+
+Rel_D(booking_service, db_booking, "Чтение/запись (ORM)")
+Rel_D(booking_service, db_cache, "Кэширование данных")
+Rel_D(booking_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(booking_service, kafka, "Отправляет события", "AMQP")
+Rel_D(booking_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(booking_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА ВОДИТЕЛЬ ###
+Lay_U(driver_service, routing_service)
+
+Lay_L(driver_service, booking_service)
+
+Lay_D(driver_service, db_driver)
+Lay_D(driver_service, db_cache)
+Lay_D(driver_service, monitoring)
+Lay_R(driver_service, pricing_service)
+
+' ### СВЯЗИ СЕРВИСА ВОДИТЕЛЬ ###
+Rel_D(driver_service, db_driver, "Чтение/запись (ORM)")
+Rel_D(driver_service, db_cache, "Кэширование данных")
+Rel_U(driver_service, db_search,  "Геопоиск водителей")
+Rel_D(driver_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(driver_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(driver_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(driver_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(driver_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА ПРАЙСИНГ ###
+Lay_U(pricing_service, routing_service)
+Lay_L(pricing_service, driver_service)
+Lay_D(pricing_service, db_pricing)
+Lay_D(pricing_service, db_cache)
+
+' ### СВЯЗИ СЕРВИСА ПРАЙСИНГ ###
+Rel_D(pricing_service, db_pricing, "Чтение/запись (ORM)")
+Rel_D(pricing_service, db_cache, "Кэширование данных")
+Rel_D(pricing_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(pricing_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(pricing_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(pricing_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(pricing_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА ПЛАТЕЖИ ###
+Lay_U(payment_service, routing_service)
+Lay_L(payment_service, pricing_service)
+Lay_D(payment_service, db_payments)
+Lay_D(payment_service, db_cache)
+Lay_D(payment_service, monitoring)
+Lay_R(payment_service, notification_service)
+
+' ### СВЯЗИ СЕРВИСА ПЛАТЕЖИ ###
+Rel_D(payment_service, db_payments, "Чтение/запись (ORM)")
+Rel_D(payment_service, db_cache, "Кэширование данных")
+Rel_D(payment_service, bank_api, "Инициирование выплат")
+Rel_D(payment_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(payment_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(payment_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(payment_service, grafana_tempo, "Отправляет трейсинг", "REST API")
+Rel_U(payment_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА УВЕДОМЛЕНИЙ ###
+Lay_U(notification_service, routing_service)
+Lay_L(notification_service, payment_service)
+Lay_D(notification_service, db_notifications)
+Lay_D(notification_service, monitoring)
+
+' ### СВЯЗИ СЕРВИСА УВЕДОМЛЕНИЙ ###
+Rel_D(notification_service, db_notifications, "Чтение/запись (ORM)")
+Rel_D(notification_service, db_cache, "Кэширование данных")
+Rel_D(notification_service, apns, "Отправляет уведомления", "REST API")
+Rel_D(notification_service, fcm, "Отправляет уведомления", "REST API")
+Rel_D(notification_service, huawei_push, "Отправляет уведомления", "REST API")
+Rel_D(notification_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(notification_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(notification_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(notification_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(notification_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА ГЕОРГРАФИИ ###
+Lay_U(geography_service, routing_service)
+Lay_L(geography_service, notification_service)
+Lay_D(geography_service, db_geography)
+
+' ### СВЯЗИ СЕРВИСА ГЕОРГРАФИИ ###
+Rel_D(geography_service, db_geography, "Чтение/запись (ORM)")
+Rel_D(geography_service, db_cache, "Кэширование данных")
+Rel_D(geography_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(geography_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(geography_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(geography_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(geography_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+
+
+' ### РАСПЛОЖЕНИЕ СЕРВИСА АНТИФРОД ###
+Lay_U(fraud_service, routing_service)
+Lay_L(fraud_service, geography_service)
+Lay_D(fraud_service, db_fraud)
+
+
+' ### СВЯЗИ СЕРВИСА АНТИФРОД ###
+Rel_D(fraud_service, db_fraud, "Чтение/запись (ORM)")
+Rel_D(fraud_service, db_cache, "Кэширование данных")
+Rel_D(fraud_service, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(fraud_service, loki, "Отправляет логи", "Loki Logs")
+Rel_D(fraud_service, kafka, "Отправляет события", "Apache Kafka")
+Rel_D(fraud_service, grafana_tempo, "Отправляет трейсинг", "Grafana Tempo")
+Rel_U(fraud_service, app_monolith, "Вызывает GoFuture Monolith", "REST API")
+
+
+' ### СВЯЗИ DB ###
+Lay_L(db_cache, monitoring)
+
+Rel_D(db_main, kafka, "Отправляет события изменения данных", "Debezium (CDC)")
+Rel_D(db_booking, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_driver, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_pricing, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_payments, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_notifications, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_geography, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+Rel_D(db_fraud, kafka, "Отправляет события изменения данных CDC", "Debezium (CDC)")
+
+Rel_D(db_main, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_booking, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_driver, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_pricing, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_payments, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_notifications, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_geography, monitoring, "Метрики БД", "PostgreSQL Exporter")
+Rel_D(db_fraud, monitoring, "Метрики БД", "PostgreSQL Exporter")
+
+' ### ASYNC WORKERS ###
+Rel_D(app_worker, kafka, "Получает задачи", "Kafka")
+Rel_D(app_worker, db_main, "Чтение/запись данных", "ORM")
+Rel_D(app_worker, db_main, "Сохраняет результаты", "ORM")
+Rel_D(app_worker, fcm, "Отправляет уведомления", "REST API")
+Rel_D(app_worker, apns, "Отправляет уведомления", "REST API")
+Rel_D(app_worker, huawei_push, "Отправляет уведомления", "REST API")
+Rel_D(app_worker, bank_api, "Выполняет выплаты", "REST API")
+Rel_D(app_worker, monitoring, "Отправляет метрики", "Prometheus Metrics")
+Rel_D(app_worker, loki, "Отправляет логи", "Loki Logs")
+
+' ### РАСПЛОЖЕНИЕ ИНДЕКСА ###
+Lay_D(db_search, app_monolith)
+
+
+' ### МОНИТОРИНГ ###
+Lay_U(monitoring, db_driver)
+Rel_D(kafka, monitoring, "Метрики очередей", "RabbitMQ Exporter")
+Rel_D(monitoring, grafana, "Предоставляет данные", "PromQL")
+Rel_D(monitoring, alert_manager, "Отправляет алерты", "Alert Rules")
+Rel_D(alert_manager, sre_engineer, "Отправляет уведомления", "Email/Slack/Pager")
+
+
+' ### CI/CD ###
+Rel_D(jenkins, ci_worker, "Запускает задачи", "SSH/API")
+Rel_R(ci_worker, artifact_repo, "Пушит образы", "Docker Push")
+Rel_D(jenkins, artifact_repo, "Деплоит образы", "Docker Pull")
+Rel_D(ci_worker, app_monolith, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, booking_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, driver_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, payment_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, pricing_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, geography_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, notification_service, "Запускает тесты", "Test Execution")
+Rel_D(ci_worker, fraud_service, "Запускает тесты", "Test Execution")
+
+' ### АНАЛИТИКА ###
+Rel_D(analytics_engine, kafka, "Читает изменения данных из брокера сообщений", "ETL Process")
+Rel_D(analytics_engine, analytics_db, "Записывает данные", "ETL Process")
+Rel_D(analytics_db,datalens, "Предоставляет данные", "SQL Queries")
+Rel_D(datalens, manager, "Бизнес-отчеты", "Dashboards")
+Rel_D(datalens, accountant, "Финансовые отчеты", "Dashboards")
+
+
+
+@enduml
